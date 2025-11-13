@@ -78,8 +78,11 @@ class ToolRegistryService:
         # Get total count
         total = query.count()
         
-        # Eager load parameters for each tool
-        query = query.options(joinedload(Tool.parameters))
+        # Eager load parameters and configs for each tool
+        query = query.options(
+            joinedload(Tool.parameters),
+            joinedload(Tool.configs)
+        )
         
         # Apply pagination
         tools = query.order_by(Tool.created_at.desc()).offset(skip).limit(limit).all()
@@ -311,8 +314,11 @@ class ToolRegistryService:
         # Get total count
         total = query.count()
         
-        # Eager load parameters for each tool
-        query = query.options(joinedload(Tool.parameters))
+        # Eager load parameters and configs for each tool
+        query = query.options(
+            joinedload(Tool.parameters),
+            joinedload(Tool.configs)
+        )
         
         # Apply pagination
         tools = query.order_by(Tool.name).offset(skip).limit(limit).all()

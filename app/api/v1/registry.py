@@ -4,9 +4,10 @@ from typing import List, Optional
 from uuid import UUID
 
 from app.database.database import get_db
-from app.database.models import PermissionAction
+from app.database.models import PermissionAction, Tool
 from app.schemas.tool import ToolListResponse
 from app.services.tool_registry import ToolRegistryService
+from app.api.v1.tools import _enhance_tool_description
 
 router = APIRouter(prefix="/registry", tags=["tools-registry"])
 
@@ -31,6 +32,10 @@ async def get_tools_by_role(
     tools, total = ToolRegistryService.get_tools_by_role(
         db, role_id, permission_action, skip, page_size
     )
+    
+    # Enhance descriptions with Args section for LLM consumption
+    for tool in tools:
+        tool.description = _enhance_tool_description(tool)
     
     return ToolListResponse(
         tools=tools,
@@ -60,6 +65,10 @@ async def get_tools_by_role_name(
     tools, total = ToolRegistryService.get_tools_by_role_name(
         db, role_name, permission_action, skip, page_size
     )
+    
+    # Enhance descriptions with Args section for LLM consumption
+    for tool in tools:
+        tool.description = _enhance_tool_description(tool)
     
     return ToolListResponse(
         tools=tools,

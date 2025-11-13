@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Set
 from uuid import UUID
+import json
 
 from app.database.database import get_db
-from app.database.models import ToolType, ParameterType
+from app.database.models import ToolType, ParameterType, Tool
 from app.schemas.tool import (
     ToolCreate, ToolUpdate, ToolResponse, ToolDetailResponse,
     ToolParameterCreate, ToolParameterResponse,
@@ -14,6 +15,89 @@ from app.schemas.tool import (
 from app.services.tool_registry import ToolRegistryService
 
 router = APIRouter(prefix="/tools", tags=["tools-management"])
+
+
+def _identify_security_parameters(tool: Tool) -> Set[str]:
+    """
+    Identify security-related parameters from headers_input_map config or common patterns.
+    Returns a set of parameter names that are security-related.
+    """
+    security_params = set()
+    
+    # Common security parameter patterns
+    security_patterns = [
+        'api_key', 'apiKey', 'apikey', 'api-key',
+        'bearer_token', 'bearerToken', 'bearer-token',
+        'token', 'auth_token', 'authToken', 'auth-token',
+        'secret', 'password', 'passwd', 'pwd',
+        'access_token', 'accessToken', 'access-token',
+        'api_token', 'apiToken', 'api-token'
+    ]
+    
+    # Check headers_input_map config
+    for config in tool.configs:
+        if config.config_key == 'headers_input_map' and config.config_value:
+            try:
+                headers_map = json.loads(config.config_value)
+                if isinstance(headers_map, dict):
+                    # Add all keys from headers_input_map (these are security params)
+                    security_params.update(headers_map.keys())
+            except (json.JSONDecodeError, AttributeError):
+                pass
+    
+    # Also check parameter names against security patterns (case-insensitive)
+    for param in tool.parameters:
+        param_name_lower = param.name.lower()
+        if any(pattern.lower() == param_name_lower for pattern in security_patterns):
+            security_params.add(param.name)
+    
+    return security_params
+
+
+def _enhance_tool_description(tool: Tool) -> str:
+    """
+    Enhance tool description with Args section showing input parameters
+    (excluding security parameters and output parameters).
+    """
+    base_description = tool.description or ""
+    
+    # Get input parameters only
+    input_params = [
+        param for param in tool.parameters 
+        if param.parameter_type == ParameterType.INPUT
+    ]
+    
+    if not input_params:
+        return base_description
+    
+    # Identify security parameters
+    security_params = _identify_security_parameters(tool)
+    
+    # Filter out security parameters
+    safe_input_params = [
+        param for param in input_params 
+        if param.name not in security_params
+    ]
+    
+    if not safe_input_params:
+        return base_description
+    
+    # Build Args section
+    args_lines = ["Args:"]
+    args_lines.append("input:")
+    
+    for param in safe_input_params:
+        desc = param.description or f"{param.type} parameter"
+        required_marker = " (required)" if param.required else ""
+        args_lines.append(f"  {param.name}: {desc}{required_marker}")
+    
+    # Combine base description with Args
+    if base_description:
+        enhanced_description = f"{base_description}\n\n{chr(10).join(args_lines)}"
+    else:
+        enhanced_description = chr(10).join(args_lines)
+    
+    return enhanced_description
 
 
 @router.post("", response_model=ToolResponse, status_code=201)
@@ -46,6 +130,10 @@ async def list_tools(
         db, skip=skip, limit=page_size, search=search,
         tool_type=tool_type, is_active=is_active
     )
+    
+    # Enhance descriptions with Args section for LLM consumption
+    for tool in tools:
+        tool.description = _enhance_tool_description(tool)
     
     return ToolListResponse(
         tools=tools,
