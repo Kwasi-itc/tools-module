@@ -13,7 +13,7 @@ records; it only adds missing entries.
 from __future__ import annotations
 
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, List
 from uuid import uuid4
 
@@ -218,6 +218,323 @@ TOOLS_DATA: List[Dict] = [
         ],
     },
     {
+        "name": "tavily_search",
+        "description": "Search the web using Tavily's AI-powered search API. Returns comprehensive, real-time web search results optimized for LLMs.",
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "utility",
+            "provider": "Tavily",
+            "tags": ["web", "search", "research", "ai-search"],
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "type": "string",
+                "required": True,
+                "description": "Search query string to find relevant information on the web.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "auto_parameters",
+                "type": "boolean",
+                "required": False,
+                "default_value": "false",
+                "description": "Whether to let Tavily automatically optimize search parameters.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "topic",
+                "type": "string",
+                "required": False,
+                "default_value": "general",
+                "description": "Topic category: 'general', 'news', etc.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "search_depth",
+                "type": "string",
+                "required": False,
+                "default_value": "basic",
+                "description": "Search depth: 'basic' (faster, fewer results) or 'advanced' (slower, more comprehensive).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "chunks_per_source",
+                "type": "number",
+                "required": False,
+                "default_value": "3",
+                "description": "Number of content chunks to extract from each source (default: 3).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "max_results",
+                "type": "number",
+                "required": False,
+                "default_value": "5",
+                "description": "Maximum number of search results to return (default: 5, max: 20).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "time_range",
+                "type": "string",
+                "required": False,
+                "description": "Time range filter (e.g., 'day', 'week', 'month', 'year') or null for all time.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "start_date",
+                "type": "string",
+                "required": False,
+                "description": "Start date for search results in YYYY-MM-DD format.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "end_date",
+                "type": "string",
+                "required": False,
+                "description": "End date for search results in YYYY-MM-DD format.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_answer",
+                "type": "boolean",
+                "required": False,
+                "default_value": "true",
+                "description": "Whether to include an AI-generated answer in the response.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_raw_content",
+                "type": "boolean",
+                "required": False,
+                "default_value": "false",
+                "description": "Whether to include raw HTML content from sources.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_images",
+                "type": "boolean",
+                "required": False,
+                "default_value": "false",
+                "description": "Whether to include images in the results.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_image_descriptions",
+                "type": "boolean",
+                "required": False,
+                "default_value": "false",
+                "description": "Whether to include AI-generated image descriptions.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_favicon",
+                "type": "boolean",
+                "required": False,
+                "default_value": "false",
+                "description": "Whether to include favicon URLs in the results.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_domains",
+                "type": "array",
+                "required": False,
+                "description": "Array of domains to specifically include in search results.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "exclude_domains",
+                "type": "array",
+                "required": False,
+                "description": "Array of domains to exclude from search results.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "country",
+                "type": "string",
+                "required": False,
+                "description": "Country code (ISO 3166-1 alpha-2) to filter results by country.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "api_key",
+                "type": "string",
+                "required": False,
+                "description": "Tavily API key (Bearer token). If not provided, uses the configured default key.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "results",
+                "type": "object",
+                "required": False,
+                "description": "Search results object containing answer, results array, response_time, and query.",
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://api.tavily.com"},
+            {"config_key": "endpoint", "config_value": "/search"},
+            {"config_key": "method", "config_value": "POST"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Content-Type": "application/json"}),
+            },
+            # Tavily uses Bearer token authentication
+            {
+                "config_key": "headers_input_map",
+                "config_value": json.dumps({
+                    "api_key": {
+                        "header": "Authorization",
+                        "template": "Bearer {value}"
+                    }
+                }),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 1000, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 100, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "serper_search",
+        "description": "Search Google using Serper API. Returns real-time Google search results including organic results, knowledge graphs, and answer boxes.",
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "utility",
+            "provider": "Serper",
+            "tags": ["web", "search", "google", "research"],
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "type": "string",
+                "required": True,
+                "description": "Search query string for Google search.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "num",
+                "type": "number",
+                "required": False,
+                "default_value": "10",
+                "description": "Number of search results to return (default: 10, max: 100).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "api_key",
+                "type": "string",
+                "required": False,
+                "description": "Serper API key. If not provided, uses the configured default key.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "results",
+                "type": "object",
+                "required": False,
+                "description": "Google search results including organic results, knowledgeGraph, and answerBox.",
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://google.serper.dev"},
+            {"config_key": "endpoint", "config_value": "/search"},
+            {"config_key": "method", "config_value": "POST"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Content-Type": "application/json"}),
+            },
+            # Serper API key via header
+            {
+                "config_key": "headers_input_map",
+                "config_value": json.dumps({
+                    "api_key": {
+                        "header": "X-API-Key",
+                        "template": "{value}"
+                    }
+                }),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 2000, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 100, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "exa_search",
+        "description": "Search the web using Exa AI search API. Returns high-quality, AI-curated search results with semantic understanding.",
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "utility",
+            "provider": "Exa",
+            "tags": ["web", "search", "ai-search", "semantic"],
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "type": "string",
+                "required": True,
+                "description": "Search query string for semantic web search.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "num_results",
+                "type": "number",
+                "required": False,
+                "default_value": "10",
+                "description": "Number of search results to return (default: 10).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "text",
+                "type": "boolean",
+                "required": False,
+                "default_value": "true",
+                "description": "Whether to return text content in the search results (default: true).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "api_key",
+                "type": "string",
+                "required": False,
+                "description": "Exa API key. If not provided, uses the configured default key.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "results",
+                "type": "array",
+                "required": False,
+                "description": "Array of semantic search results with title, url, text, and score.",
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://api.exa.ai"},
+            {"config_key": "endpoint", "config_value": "/search"},
+            {"config_key": "method", "config_value": "POST"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Content-Type": "application/json"}),
+            },
+            # Exa uses x-api-key header for authentication
+            {
+                "config_key": "headers_input_map",
+                "config_value": json.dumps({
+                    "api_key": {
+                        "header": "x-api-key",
+                        "template": "{value}"
+                    }
+                }),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 1000, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 50, "time_window_seconds": 60},
+        ],
+    },
+    {
         "name": "african_country_directory",
         "description": "Retrieve country profiles for the Africa region using the REST Countries public API.",
         "type": ToolType.HTTP,
@@ -401,18 +718,27 @@ PERMISSIONS_DATA = [
     {"role": "platform-admin", "tool": "initiate_payment", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "transaction_insights", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "web_search", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "tavily_search", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "serper_search", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "exa_search", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "african_country_directory", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "earnings_call_transcript_fetcher", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "bearer_protected_resource_probe", "action": PermissionAction.MANAGE},
     {"role": "fintech-analyst", "tool": "transaction_insights", "action": PermissionAction.EXECUTE},
     {"role": "fintech-analyst", "tool": "account_balance_lookup", "action": PermissionAction.READ},
     {"role": "fintech-analyst", "tool": "web_search", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "tavily_search", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "serper_search", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "exa_search", "action": PermissionAction.EXECUTE},
     {"role": "fintech-analyst", "tool": "african_country_directory", "action": PermissionAction.READ},
     {"role": "fintech-analyst", "tool": "earnings_call_transcript_fetcher", "action": PermissionAction.EXECUTE},
     {"role": "fintech-analyst", "tool": "bearer_protected_resource_probe", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "account_balance_lookup", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "initiate_payment", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "web_search", "action": PermissionAction.READ},
+    {"role": "customer-support", "tool": "tavily_search", "action": PermissionAction.READ},
+    {"role": "customer-support", "tool": "serper_search", "action": PermissionAction.READ},
+    {"role": "customer-support", "tool": "exa_search", "action": PermissionAction.READ},
     {"role": "customer-support", "tool": "african_country_directory", "action": PermissionAction.READ},
     {"role": "customer-support", "tool": "earnings_call_transcript_fetcher", "action": PermissionAction.READ},
     {"role": "customer-support", "tool": "bearer_protected_resource_probe", "action": PermissionAction.READ},
@@ -434,7 +760,7 @@ EXECUTIONS_DATA = [
             }
         },
         "execution_time_ms": 220,
-        "created_at": datetime.utcnow() - timedelta(minutes=15),
+        "created_at": datetime.now(timezone.utc) - timedelta(minutes=15),
     },
     {
         "tool": "initiate_payment",
@@ -449,7 +775,7 @@ EXECUTIONS_DATA = [
         },
         "output_data": {"payment_id": 101, "status": "created"},
         "execution_time_ms": 540,
-        "created_at": datetime.utcnow() - timedelta(minutes=12),
+        "created_at": datetime.now(timezone.utc) - timedelta(minutes=12),
     },
     {
         "tool": "transaction_insights",
@@ -464,7 +790,7 @@ EXECUTIONS_DATA = [
             ]
         },
         "execution_time_ms": 680,
-        "created_at": datetime.utcnow() - timedelta(minutes=5),
+        "created_at": datetime.now(timezone.utc) - timedelta(minutes=5),
     },
     {
         "tool": "web_search",
@@ -479,7 +805,7 @@ EXECUTIONS_DATA = [
             ]
         },
         "execution_time_ms": 430,
-        "created_at": datetime.utcnow() - timedelta(minutes=2),
+        "created_at": datetime.now(timezone.utc) - timedelta(minutes=2),
     },
     {
         "tool": "african_country_directory",
@@ -494,7 +820,7 @@ EXECUTIONS_DATA = [
             ]
         },
         "execution_time_ms": 510,
-        "created_at": datetime.utcnow() - timedelta(minutes=1),
+        "created_at": datetime.now(timezone.utc) - timedelta(minutes=1),
     },
     {
         "tool": "earnings_call_transcript_fetcher",
@@ -513,7 +839,7 @@ EXECUTIONS_DATA = [
             }
         },
         "execution_time_ms": 620,
-        "created_at": datetime.utcnow() - timedelta(seconds=30),
+        "created_at": datetime.now(timezone.utc) - timedelta(seconds=30),
     },
     {
         "tool": "bearer_protected_resource_probe",
@@ -528,7 +854,7 @@ EXECUTIONS_DATA = [
             }
         },
         "execution_time_ms": 190,
-        "created_at": datetime.utcnow() - timedelta(seconds=20),
+        "created_at": datetime.now(timezone.utc) - timedelta(seconds=20),
     },
 ]
 
@@ -680,7 +1006,7 @@ def create_execution_history(session: Session, execution_data: Dict, role_map: D
         .filter(
             ToolExecution.tool_id == tool.id,
             ToolExecution.agent_id == execution_data["agent_id"],
-            ToolExecution.created_at >= datetime.utcnow() - timedelta(hours=1),
+            ToolExecution.created_at >= datetime.now(timezone.utc) - timedelta(hours=1),
         )
         .first()
     )
@@ -698,7 +1024,7 @@ def create_execution_history(session: Session, execution_data: Dict, role_map: D
             output_data=execution_data.get("output_data"),
             error_message=execution_data.get("error_message"),
             execution_time_ms=execution_data.get("execution_time_ms"),
-            created_at=execution_data.get("created_at", datetime.utcnow()),
+            created_at=execution_data.get("created_at", datetime.now(timezone.utc)),
         )
     )
     session.commit()
