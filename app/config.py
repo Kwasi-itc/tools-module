@@ -4,6 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     # Database Configuration
+    # DATABASE_URL environment variable is automatically read by Pydantic Settings
     database_url: str = "postgresql://postgres:kanjay@localhost:5433/tools_module_db"
     
     # API Configuration
