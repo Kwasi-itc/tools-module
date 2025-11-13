@@ -72,6 +72,16 @@ This reference outlines the HTTP calls an agent or LLM client should make when i
   }
   ```
 
+**Tool Arguments Documentation**
+- When calling tools, refer to the `parameters` array in the tool detail response to understand required and optional arguments.
+- For database query tools that accept natural language questions, common arguments include:
+
+**Args:**
+
+- `question`: Natural language question (NOT SQL code) - e.g., "What are the top 3 institutions by population?"
+
+- `preferred_visualization`: Preferred way to display the results (auto, table, bar_chart, pie_chart, line_chart, area_chart, text)
+
 ---
 
 ### 2. Resolve Roles and Permissions

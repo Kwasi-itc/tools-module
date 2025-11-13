@@ -90,6 +90,7 @@ class ToolResponse(ToolBase):
     id: UUID
     created_at: datetime
     updated_at: datetime
+    parameters: List[ToolParameterResponse] = []
     
     class Config:
         from_attributes = True
@@ -97,7 +98,6 @@ class ToolResponse(ToolBase):
 
 class ToolDetailResponse(ToolResponse):
     """Tool with all related data"""
-    parameters: List[ToolParameterResponse] = []
     configs: List[ToolConfigResponse] = []
     
     class Config:

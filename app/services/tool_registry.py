@@ -1,4 +1,4 @@
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import or_, func
 from typing import List, Optional, Dict, Any
 from uuid import UUID
@@ -77,6 +77,9 @@ class ToolRegistryService:
         
         # Get total count
         total = query.count()
+        
+        # Eager load parameters for each tool
+        query = query.options(joinedload(Tool.parameters))
         
         # Apply pagination
         tools = query.order_by(Tool.created_at.desc()).offset(skip).limit(limit).all()
@@ -307,6 +310,9 @@ class ToolRegistryService:
         
         # Get total count
         total = query.count()
+        
+        # Eager load parameters for each tool
+        query = query.options(joinedload(Tool.parameters))
         
         # Apply pagination
         tools = query.order_by(Tool.name).offset(skip).limit(limit).all()
