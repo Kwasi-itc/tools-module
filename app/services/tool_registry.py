@@ -301,6 +301,7 @@ class ToolRegistryService:
             allowed_actions = [PermissionAction.MANAGE]
         
         # Query tools that have permissions for this role
+        # Use distinct on ID, but must order by ID first for PostgreSQL
         query = db.query(Tool).join(
             ToolPermission,
             Tool.id == ToolPermission.tool_id
@@ -309,10 +310,18 @@ class ToolRegistryService:
             ToolPermission.action.in_(allowed_actions),
             ToolPermission.granted == True,
             Tool.is_active == True
-        ).distinct()
+        ).distinct(Tool.id).order_by(Tool.id, Tool.name)
         
-        # Get total count
-        total = query.count()
+        # Get total count - use subquery with distinct on ID to avoid JSON comparison issues
+        total = db.query(Tool.id).join(
+            ToolPermission,
+            Tool.id == ToolPermission.tool_id
+        ).filter(
+            ToolPermission.role_id == role_id,
+            ToolPermission.action.in_(allowed_actions),
+            ToolPermission.granted == True,
+            Tool.is_active == True
+        ).distinct().count()
         
         # Eager load parameters and configs for each tool
         query = query.options(
@@ -320,8 +329,11 @@ class ToolRegistryService:
             joinedload(Tool.configs)
         )
         
-        # Apply pagination
-        tools = query.order_by(Tool.name).offset(skip).limit(limit).all()
+        # Apply pagination - note: ordering is already set above
+        tools = query.offset(skip).limit(limit).all()
+        
+        # Sort results by name in Python after fetching to maintain name ordering
+        tools = sorted(tools, key=lambda t: t.name)
         
         return tools, total
     
