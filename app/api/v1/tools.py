@@ -84,7 +84,6 @@ def _enhance_tool_description(tool: Tool) -> str:
     
     # Build Args section
     args_lines = ["Args:"]
-    args_lines.append("input:")
     
     for param in safe_input_params:
         desc = param.description or f"{param.type} parameter"
