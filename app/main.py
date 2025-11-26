@@ -1,7 +1,12 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import logging
 from app.config import settings
 from app.api.v1 import tools, registry, executions, permissions, analytics
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="Tools Module API",
@@ -19,6 +24,31 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add validation error handler to log detailed errors
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log validation errors with full details for debugging"""
+    errors = exc.errors()
+    body_str = None
+    if exc.body:
+        try:
+            body_str = exc.body.decode('utf-8') if isinstance(exc.body, bytes) else str(exc.body)
+        except Exception:
+            body_str = "<unable to decode body>"
+    
+    error_details = {
+        "detail": errors,
+        "body": body_str
+    }
+    logger.error(
+        f"Validation error on {request.method} {request.url.path}: {errors}",
+        extra={"request_body": body_str, "errors": errors}
+    )
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content=error_details
+    )
 
 # Register API routers
 app.include_router(tools.router, prefix=settings.api_v1_prefix)
