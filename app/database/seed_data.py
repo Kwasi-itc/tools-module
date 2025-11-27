@@ -86,6 +86,109 @@ TOOLS_DATA: List[Dict] = [
         ],
     },
     {
+        "name": "ghana_financial_metrics_search",
+        "description": (
+            "Targeted Tavily search tuned for Ghana-focused macroeconomic and banking metrics. Use it to pull GDP updates, "
+            "Bank of Ghana reference rate notices, Ghana Statistical Service indicators, average lending/savings rates, and "
+            "fixed deposit tables from trusted public institutions. By default it biases toward BoG, GSS, SEC, GSE, and major "
+            "bank domains while keeping every request authenticated with the shared Tavily key."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "research",
+            "provider": "Tavily",
+            "tags": ["ghana", "finance", "macro", "rates", "search"],
+        },
+        "parameters": [
+            {
+                "name": "query",
+                "type": "string",
+                "required": True,
+                "description": "Financial research question focused on Ghana (e.g., latest GDP figures, BoG policy rate).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "search_depth",
+                "type": "string",
+                "required": False,
+                "default_value": "advanced",
+                "description": "basic or advanced. Advanced is recommended for regulatory circulars and bank disclosures.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_domains",
+                "type": "array",
+                "required": False,
+                "default_value": json.dumps([
+                    "https://www.bog.gov.gh",
+                    "https://www.statsghana.gov.gh",
+                    "https://www.absa.com.gh",
+                    "http://www.ecobank.com",
+                    "https://www.gcbbank.com.gh",
+                    "http://www.calbank.net",
+                    "https://www.sc.com/gh",
+                    "https://www.stanbicbank.com.gh",
+                    "https://www.firstnationalbank.com.gh",
+                    "https://www.fidelitybank.com.gh",
+                    "https://www.gtbghana.com",
+                    "https://www.zenithbank.com.gh",
+                    "https://cbg.com.gh",
+                    "http://www.agricbank.com",
+                    "http://www.ghana.accessbankplc.com",
+                    "http://www.boaghana.com",
+                    "http://www.firstatlanticbank.com.gh",
+                    "http://www.fbnbankghana.com",
+                    "http://www.nib-ghana.com",
+                    "https://www.omnibsic.com.gh",
+                    "http://www.prudentialbank.com.gh",
+                    "http://www.republicghana.com",
+                    "http://www.societegenerale.com.gh",
+                    "http://www.ubagroup.com",
+                    "http://www.myumbbank.com"
+                ]),
+                "description": (
+                    "Optional override list of trusted domains. Defaults to Ghana's regulators and licensed banks; supply "
+                    "your own list to extend or replace the built-in allowlist."
+                ),
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "country",
+                "type": "string",
+                "required": False,
+                "default_value": "GH",
+                "description": "Country bias for Tavily. Defaults to GH to keep results Ghana-specific.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "results",
+                "type": "object",
+                "required": False,
+                "description": "Structured Tavily search response containing summarized answer and source snippets.",
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://api.tavily.com"},
+            {"config_key": "endpoint", "config_value": "/search"},
+            {"config_key": "method", "config_value": "POST"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Content-Type": "application/json"}),
+            },
+            {"config_key": "auth_type", "config_value": "bearer_token"},
+            {
+                "config_key": "api_key",
+                "config_value": "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",
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 800, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 80, "time_window_seconds": 60},
+        ],
+    },
+    {
         "name": "ghana_tbill_calculator",
         "description": (
             "Project Ghana Treasury bill returns using the Bank of Ghana discount methodology. Provide an investment amount, "
@@ -306,14 +409,17 @@ ROLES_DATA = [
 
 PERMISSIONS_DATA = [
     {"role": "platform-admin", "tool": "web_search", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "ghana_financial_metrics_search", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "ghana_tbill_calculator", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "fx_exchange_rate", "action": PermissionAction.MANAGE},
     {"role": "platform-admin", "tool": "loan_repayment_calculator", "action": PermissionAction.MANAGE},
     {"role": "fintech-analyst", "tool": "web_search", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "ghana_financial_metrics_search", "action": PermissionAction.EXECUTE},
     {"role": "fintech-analyst", "tool": "ghana_tbill_calculator", "action": PermissionAction.EXECUTE},
     {"role": "fintech-analyst", "tool": "fx_exchange_rate", "action": PermissionAction.EXECUTE},
     {"role": "fintech-analyst", "tool": "loan_repayment_calculator", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "web_search", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "ghana_financial_metrics_search", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "ghana_tbill_calculator", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "fx_exchange_rate", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "loan_repayment_calculator", "action": PermissionAction.EXECUTE},
@@ -341,6 +447,37 @@ EXECUTIONS_DATA = [
         },
         "execution_time_ms": 430,
         "created_at": datetime.now(timezone.utc) - timedelta(minutes=2),
+    },
+    {
+        "tool": "ghana_financial_metrics_search",
+        "agent_id": "agent-akua",
+        "role": "fintech-analyst",
+        "status": ExecutionStatus.SUCCESS,
+        "input_data": {
+            "query": "latest Bank of Ghana reference rate and average lending rate",
+            "search_depth": "advanced",
+            "country": "GH",
+            "include_domains": ["bog.gov.gh", "gss.gov.gh"]
+        },
+        "output_data": {
+            "results": {
+                "answer": "The Bank of Ghana reference rate for July 2024 remains 29.95%, with average commercial lending rates ranging 33-36% across tier-1 banks.",
+                "response_time": 612,
+                "query": "latest Bank of Ghana reference rate and average lending rate",
+                "results": [
+                    {
+                        "title": "BoG Reference Rate Update - July 2024",
+                        "url": "https://www.bog.gov.gh/monetary-policy/reference-rate-july-2024"
+                    },
+                    {
+                        "title": "Bank Lending Rates Summary - Ghana Statistical Service",
+                        "url": "https://statsghana.gov.gh/lending-rates-summary"
+                    }
+                ]
+            }
+        },
+        "execution_time_ms": 610,
+        "created_at": datetime.now(timezone.utc) - timedelta(minutes=3),
     },
     {
         "tool": "ghana_tbill_calculator",
