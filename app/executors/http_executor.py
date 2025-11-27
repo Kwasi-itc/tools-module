@@ -97,6 +97,41 @@ class HTTPExecutor:
         sanitized_input = {
             key: value for key, value in input_data.items() if key not in path_param_names
         }
+        
+        # Apply default values from tool parameters for missing inputs
+        from app.database.models import ParameterType
+        if tool.parameters:
+            for param in tool.parameters:
+                # Only apply defaults for input parameters that have default values
+                if (param.parameter_type == ParameterType.INPUT and 
+                    param.default_value is not None and 
+                    param.name not in sanitized_input):
+                    
+                    # Parse default value based on parameter type
+                    default_val = param.default_value
+                    if param.type == "array":
+                        try:
+                            default_val = json.loads(default_val)
+                        except (json.JSONDecodeError, TypeError):
+                            # If parsing fails, keep as string
+                            pass
+                    elif param.type == "object":
+                        try:
+                            default_val = json.loads(default_val)
+                        except (json.JSONDecodeError, TypeError):
+                            # If parsing fails, keep as string
+                            pass
+                    elif param.type == "number":
+                        try:
+                            # Try to parse as float first (to handle decimals)
+                            default_val = float(default_val) if '.' in str(default_val) else int(default_val)
+                        except (ValueError, TypeError):
+                            # If parsing fails, keep as string
+                            pass
+                    elif param.type == "boolean":
+                        default_val = str(default_val).lower() in ("true", "1", "yes")
+                    
+                    sanitized_input[param.name] = default_val
 
         # Map input values into headers if configured
         headers_input_map = configs.get("headers_input_map")

@@ -41,8 +41,12 @@ class ToolRegistryService:
     
     @staticmethod
     def get_tool(db: Session, tool_id: UUID) -> Optional[Tool]:
-        """Get a tool by ID"""
-        return db.query(Tool).filter(Tool.id == tool_id).first()
+        """Get a tool by ID with parameters and configs eagerly loaded"""
+        from sqlalchemy.orm import joinedload
+        return db.query(Tool).options(
+            joinedload(Tool.parameters),
+            joinedload(Tool.configs)
+        ).filter(Tool.id == tool_id).first()
     
     @staticmethod
     def get_tool_by_name(db: Session, name: str) -> Optional[Tool]:
