@@ -160,8 +160,8 @@ TOOLS_DATA: List[Dict] = [
                 "name": "country",
                 "type": "string",
                 "required": False,
-                "default_value": "GH",
-                "description": "Country bias for search results. Defaults to GH to keep results Ghana-specific.",
+                "default_value": "ghana",
+                "description": "Country bias for search results. Defaults to Ghana to keep results Ghana-specific.",
                 "parameter_type": ParameterType.INPUT,
             },
             {
