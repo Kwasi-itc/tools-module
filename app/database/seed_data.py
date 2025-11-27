@@ -88,10 +88,10 @@ TOOLS_DATA: List[Dict] = [
     {
         "name": "ghana_financial_metrics_search",
         "description": (
-            "Targeted Tavily search tuned for Ghana-focused macroeconomic and banking metrics from trusted official sources. "
+            "Targeted search for Ghana-focused macroeconomic and banking metrics from trusted official sources. "
             "Use it to pull GDP updates, Bank of Ghana reference rate notices, Ghana Statistical Service indicators, average "
             "lending/savings rates, and fixed deposit tables from regulators and licensed banks. By default it biases toward "
-            "BoG, GSS, SEC, GSE, and major bank domains "
+            "BoG, GSS, SEC, GSE, and major bank domains."
         ),
         "type": ToolType.HTTP,
         "version": "1.0.0",
@@ -161,14 +161,34 @@ TOOLS_DATA: List[Dict] = [
                 "type": "string",
                 "required": False,
                 "default_value": "GH",
-                "description": "Country bias for Tavily. Defaults to GH to keep results Ghana-specific.",
+                "description": "Country bias for search results. Defaults to GH to keep results Ghana-specific.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "include_answer",
+                "type": "string",
+                "required": False,
+                "default_value": "advanced",
+                "description": (
+                    "Include an LLM-generated answer to the provided query. Set to 'basic' or 'true' for a quick answer, "
+                    "'advanced' for a more detailed answer, or 'false' to exclude the answer. Defaults to 'advanced' for "
+                    "comprehensive financial insights."
+                ),
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "max_results",
+                "type": "number",
+                "required": False,
+                "default_value": "2",
+                "description": "Maximum number of search results to return. Defaults to 2 to keep responses focused.",
                 "parameter_type": ParameterType.INPUT,
             },
             {
                 "name": "results",
                 "type": "object",
                 "required": False,
-                "description": "Structured Tavily search response containing summarized answer and source snippets.",
+                "description": "Structured search response containing summarized answer and source snippets.",
                 "parameter_type": ParameterType.OUTPUT,
             },
         ],
