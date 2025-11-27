@@ -88,10 +88,10 @@ TOOLS_DATA: List[Dict] = [
     {
         "name": "ghana_financial_metrics_search",
         "description": (
-            "Targeted Tavily search tuned for Ghana-focused macroeconomic and banking metrics. Use it to pull GDP updates, "
-            "Bank of Ghana reference rate notices, Ghana Statistical Service indicators, average lending/savings rates, and "
-            "fixed deposit tables from trusted public institutions. By default it biases toward BoG, GSS, SEC, GSE, and major "
-            "bank domains while keeping every request authenticated with the shared Tavily key."
+            "Targeted Tavily search tuned for Ghana-focused macroeconomic and banking metrics from trusted official sources. "
+            "Use it to pull GDP updates, Bank of Ghana reference rate notices, Ghana Statistical Service indicators, average "
+            "lending/savings rates, and fixed deposit tables from regulators and licensed banks. By default it biases toward "
+            "BoG, GSS, SEC, GSE, and major bank domains "
         ),
         "type": ToolType.HTTP,
         "version": "1.0.0",
@@ -105,7 +105,10 @@ TOOLS_DATA: List[Dict] = [
                 "name": "query",
                 "type": "string",
                 "required": True,
-                "description": "Financial research question focused on Ghana (e.g., latest GDP figures, BoG policy rate).",
+                "description": (
+                    "Financial research question focused on Ghana. Use specific queries targeting official sources: "
+                    "'Bank of Ghana reference rate', 'Ghana Statistical Service GDP Q3 2024', 'Standard Chartered fixed deposit rates'. "
+                ),
                 "parameter_type": ParameterType.INPUT,
             },
             {
