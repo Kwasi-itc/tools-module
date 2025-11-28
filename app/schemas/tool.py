@@ -19,6 +19,15 @@ class ToolParameterCreate(ToolParameterBase):
     pass
 
 
+class ToolParameterUpdate(BaseModel):
+    name: Optional[str] = None
+    type: Optional[str] = Field(None, description="Parameter type: string, number, boolean, object, array")
+    required: Optional[bool] = None
+    description: Optional[str] = None
+    default_value: Optional[str] = None
+    parameter_type: Optional[Literal["input", "output"]] = None
+
+
 class ToolParameterResponse(BaseModel):
     id: UUID
     tool_id: UUID

@@ -31,6 +31,7 @@ All endpoints live under `/api/v1`. Key categories:
 **Tool Parameters (`/tools/{tool_id}/parameters`)**
 - `POST`: add a parameter (`ToolParameterCreate`).
 - `GET`: list parameters; optional `parameter_type` filter (`input` or `output`).
+- `PUT /tools/parameters/{parameter_id}`: update a parameter (`ToolParameterUpdate`).
 - `DELETE /tools/parameters/{parameter_id}`: remove a parameter.
 
 **Tool Configs (`/tools/{tool_id}/configs`)**

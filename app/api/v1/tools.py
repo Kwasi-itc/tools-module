@@ -8,7 +8,7 @@ from app.database.database import get_db
 from app.database.models import ToolType, ParameterType, Tool
 from app.schemas.tool import (
     ToolCreate, ToolUpdate, ToolResponse, ToolDetailResponse,
-    ToolParameterCreate, ToolParameterResponse,
+    ToolParameterCreate, ToolParameterUpdate, ToolParameterResponse,
     ToolConfigCreate, ToolConfigResponse,
     ToolListResponse
 )
@@ -222,6 +222,24 @@ async def get_parameters(
     
     parameters = ToolRegistryService.get_parameters(db, tool_id, parameter_type)
     return parameters
+
+
+@router.put("/parameters/{parameter_id}", response_model=ToolParameterResponse)
+async def update_parameter(
+    parameter_id: UUID,
+    parameter_data: ToolParameterUpdate,
+    db: Session = Depends(get_db)
+):
+    """Update a parameter"""
+    try:
+        parameter = ToolRegistryService.update_parameter(db, parameter_id, parameter_data)
+        if not parameter:
+            raise HTTPException(status_code=404, detail="Parameter not found")
+        return parameter
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error updating parameter: {str(e)}")
 
 
 @router.delete("/parameters/{parameter_id}", status_code=204)

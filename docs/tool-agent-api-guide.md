@@ -82,6 +82,35 @@ This reference outlines the HTTP calls an agent or LLM client should make when i
 
 - `preferred_visualization`: Preferred way to display the results (auto, table, bar_chart, pie_chart, line_chart, area_chart, text)
 
+**Update Tool Parameter**
+- **Method / Path:** `PUT /tools/parameters/<PARAMETER_ID>`
+- **Purpose:** Update an existing parameter's properties (name, type, required, description, default_value, parameter_type).
+- **Request Body:** All fields are optional - only include fields you want to update:
+  ```json
+  {
+    "name": "updated_param_name",
+    "type": "string",
+    "required": false,
+    "description": "Updated parameter description",
+    "default_value": "default_value",
+    "parameter_type": "input"
+  }
+  ```
+- **Expected 200 Response Snapshot:**
+  ```json
+  {
+    "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "tool_id": "9f4e5b94-4358-4b4a-9e57-83dbdb67eb9e",
+    "name": "updated_param_name",
+    "type": "string",
+    "required": false,
+    "description": "Updated parameter description",
+    "default_value": "default_value",
+    "parameter_type": "input"
+  }
+  ```
+- **Note:** You cannot update a parameter to have the same name and parameter_type as another parameter on the same tool.
+
 ---
 
 ### 2. Resolve Roles and Permissions

@@ -7,7 +7,7 @@ from app.database.models import (
     Role, ToolPermission, PermissionAction
 )
 from app.schemas.tool import (
-    ToolCreate, ToolUpdate, ToolParameterCreate, ToolConfigCreate
+    ToolCreate, ToolUpdate, ToolParameterCreate, ToolParameterUpdate, ToolConfigCreate
 )
 
 
@@ -195,6 +195,58 @@ class ToolRegistryService:
             query = query.filter(ToolParameter.parameter_type == parameter_type)
         
         return query.order_by(ToolParameter.name).all()
+    
+    @staticmethod
+    def update_parameter(
+        db: Session,
+        parameter_id: UUID,
+        parameter_data: ToolParameterUpdate
+    ) -> Optional[ToolParameter]:
+        """Update a parameter"""
+        parameter = db.query(ToolParameter).filter(ToolParameter.id == parameter_id).first()
+        if not parameter:
+            return None
+        
+        # Update fields if provided
+        if parameter_data.name is not None:
+            # Check if another parameter with the same name and type exists (excluding current)
+            if parameter_data.parameter_type is not None:
+                param_type_enum = ParameterType.INPUT if parameter_data.parameter_type == "input" else ParameterType.OUTPUT
+            else:
+                param_type_enum = parameter.parameter_type
+            
+            existing = db.query(ToolParameter).filter(
+                ToolParameter.tool_id == parameter.tool_id,
+                ToolParameter.name == parameter_data.name,
+                ToolParameter.parameter_type == param_type_enum,
+                ToolParameter.id != parameter_id
+            ).first()
+            if existing:
+                raise ValueError(
+                    f"Parameter '{parameter_data.name}' of type '{param_type_enum.value}' "
+                    f"already exists for this tool"
+                )
+            parameter.name = parameter_data.name
+        
+        if parameter_data.type is not None:
+            parameter.type = parameter_data.type
+        
+        if parameter_data.required is not None:
+            parameter.required = parameter_data.required
+        
+        if parameter_data.description is not None:
+            parameter.description = parameter_data.description
+        
+        if parameter_data.default_value is not None:
+            parameter.default_value = parameter_data.default_value
+        
+        if parameter_data.parameter_type is not None:
+            param_type_enum = ParameterType.INPUT if parameter_data.parameter_type == "input" else ParameterType.OUTPUT
+            parameter.parameter_type = param_type_enum
+        
+        db.commit()
+        db.refresh(parameter)
+        return parameter
     
     @staticmethod
     def delete_parameter(db: Session, parameter_id: UUID) -> bool:

@@ -137,6 +137,7 @@ TOOLS_DATA: List[Dict] = [
                     "https://www.gtbghana.com",
                     "https://www.zenithbank.com.gh",
                     "https://cbg.com.gh",
+                    "https://www.gab.com.gh",
                     "http://www.agricbank.com",
                     "http://www.ghana.accessbankplc.com",
                     "http://www.boaghana.com",
