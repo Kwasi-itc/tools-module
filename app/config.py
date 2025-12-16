@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     default_rate_limit_window_seconds: int = 60
     
     # Tool Execution
-    default_execution_timeout_seconds: int = 30
+    default_execution_timeout_seconds: int = 300  # 5 minutes default, configurable via DEFAULT_EXECUTION_TIMEOUT_SECONDS env var
     
     class Config:
         env_file = ".env"

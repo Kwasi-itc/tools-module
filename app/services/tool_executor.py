@@ -84,16 +84,26 @@ class ToolExecutorService:
         execution.status = ExecutionStatus.RUNNING
         db.commit()
         
+        # Get timeout from tool config if available, otherwise use default
+        configs = {config.config_key: config.config_value for config in tool.configs}
+        timeout = settings.default_execution_timeout_seconds
+        if "timeout_seconds" in configs:
+            try:
+                timeout = int(configs["timeout_seconds"])
+            except (ValueError, TypeError):
+                # If invalid, use default
+                pass
+        
         try:
             if tool.type == ToolType.HTTP:
                 result = await HTTPExecutor.execute(
-                    tool, input_data, settings.default_execution_timeout_seconds
+                    tool, input_data, timeout
                 )
                 output_data = result
                 
             elif tool.type == ToolType.DATABASE:
                 result = DatabaseExecutor.execute(
-                    tool, input_data, db, settings.default_execution_timeout_seconds
+                    tool, input_data, db, timeout
                 )
                 output_data = result
             else:
