@@ -1,8 +1,8 @@
 """Seed data script for the Tools Module database.
 
-This script inserts four sample tools (web search, T-bill calculator, FX rates, and
-loan repayment calculator), the core roles, their permissions, and a bit of execution
-history so the system can be exercised immediately after setup.
+This script inserts sample tools (web search, T-bill calculator, FX rates, loan repayment
+calculator, and Chango API endpoints), the core roles, their permissions, and a bit of
+execution history so the system can be exercised immediately after setup.
 """
 
 from __future__ import annotations
@@ -411,7 +411,336 @@ TOOLS_DATA: List[Dict] = [
             {"scope": RateLimitScope.GLOBAL, "max_requests": 600, "time_window_seconds": 3600},
             {"scope": RateLimitScope.AGENT, "max_requests": 60, "time_window_seconds": 60},
         ],
-    }
+    },
+    {
+        "name": "chango_auth_signup",
+        "description": (
+            "Create a new user account and send OTP. Register a new user with email, phone number, and password. "
+            "An OTP will be sent to the phone number. For dummy implementation, the OTP is returned in the response."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "authentication",
+            "provider": "Chango API",
+            "tags": ["auth", "signup", "user-registration", "otp"],
+        },
+        "parameters": [
+            {
+                "name": "email",
+                "type": "string",
+                "required": True,
+                "description": "User's email address.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "phoneNumber",
+                "type": "string",
+                "required": True,
+                "description": "User's phone number.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "password",
+                "type": "string",
+                "required": True,
+                "description": "User's password.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": "Response containing user ID, email, phone number, status, and OTP code (for dummy implementation).",
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/auth/signup"},
+            {"config_key": "method", "config_value": "POST"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Content-Type": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 200, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 20, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "chango_auth_verify_otp",
+        "description": (
+            "Verify OTP code sent to user's phone number during signup. Completes the user registration process."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "authentication",
+            "provider": "Chango API",
+            "tags": ["auth", "otp", "verification", "user-registration"],
+        },
+        "parameters": [
+            {
+                "name": "phoneNumber",
+                "type": "string",
+                "required": True,
+                "description": "Phone number that received the OTP.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "otp",
+                "type": "string",
+                "required": True,
+                "description": "OTP code to verify.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": "Response containing verification status and user details.",
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/auth/verify-otp"},
+            {"config_key": "method", "config_value": "POST"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Content-Type": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 300, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 30, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "chango_groups",
+        "description": (
+            "Get all groups for the authenticated user. Bearer token may be provided but is not required "
+            "(dummy implementation - returns all groups)."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "groups",
+            "provider": "Chango API",
+            "tags": ["groups", "list", "user-data"],
+        },
+        "parameters": [
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": (
+                    "Array of all groups with details including group name, country, description, "
+                    "cashout policy, member count, status, and creation date."
+                ),
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/groups"},
+            {"config_key": "method", "config_value": "GET"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Accept": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 500, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 50, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "chango_campaigns_group",
+        "description": (
+            "Get all campaigns for a specific group. Bearer token may be provided but is not required "
+            "(dummy implementation)."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "campaigns",
+            "provider": "Chango API",
+            "tags": ["campaigns", "groups", "list"],
+        },
+        "parameters": [
+            {
+                "name": "groupName",
+                "type": "string",
+                "required": True,
+                "description": "Name of the group to get campaigns for.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": (
+                    "Array of campaigns for the specified group, including campaign name, type, details, "
+                    "end date, target amount, and status."
+                ),
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/campaigns/group"},
+            {"config_key": "method", "config_value": "GET"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Accept": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 500, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 50, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "chango_wallets",
+        "description": (
+            "Get all wallets for the authenticated user. Bearer token may be provided but is not required "
+            "(dummy implementation - returns all wallets). Card numbers are masked in the response."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "wallets",
+            "provider": "Chango API",
+            "tags": ["wallets", "list", "user-data", "cards"],
+        },
+        "parameters": [
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": (
+                    "Array of all wallets with details including wallet type, country, network/account/card "
+                    "information (masked for security), and status."
+                ),
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/wallets"},
+            {"config_key": "method", "config_value": "GET"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Accept": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 500, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 50, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "chango_contributions",
+        "description": (
+            "Get all contributions. Can filter by groupName and/or campaignName. Bearer token may be provided "
+            "but is not required (dummy implementation - returns all contributions)."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "contributions",
+            "provider": "Chango API",
+            "tags": ["contributions", "list", "filter", "campaigns", "groups"],
+        },
+        "parameters": [
+            {
+                "name": "groupName",
+                "type": "string",
+                "required": False,
+                "description": "Filter by group name.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "campaignName",
+                "type": "string",
+                "required": False,
+                "description": "Filter by campaign name (can be used with groupName).",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": (
+                    "Array of contributions with details including contribution type, amount, wallet ID, "
+                    "anonymous status, recurring status, on-behalf information, and status."
+                ),
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/contributions"},
+            {"config_key": "method", "config_value": "GET"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Accept": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 500, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 50, "time_window_seconds": 60},
+        ],
+    },
+    {
+        "name": "chango_cashout",
+        "description": (
+            "Get all cashouts. Can filter by campaignName. Bearer token may be provided but is not required "
+            "(dummy implementation - returns all cashouts)."
+        ),
+        "type": ToolType.HTTP,
+        "version": "1.0.0",
+        "tool_metadata": {
+            "category": "cashouts",
+            "provider": "Chango API",
+            "tags": ["cashouts", "list", "filter", "campaigns"],
+        },
+        "parameters": [
+            {
+                "name": "campaignName",
+                "type": "string",
+                "required": False,
+                "description": "Filter by campaign name.",
+                "parameter_type": ParameterType.INPUT,
+            },
+            {
+                "name": "response",
+                "type": "object",
+                "required": False,
+                "description": (
+                    "Array of cashouts with details including campaign name, amount, reason, cashout type, "
+                    "recipient phone number, wallet ID, and status."
+                ),
+                "parameter_type": ParameterType.OUTPUT,
+            },
+        ],
+        "configs": [
+            {"config_key": "base_url", "config_value": "https://mydummyapi.onrender.com"},
+            {"config_key": "endpoint", "config_value": "/chango/cashout"},
+            {"config_key": "method", "config_value": "GET"},
+            {
+                "config_key": "headers",
+                "config_value": json.dumps({"Accept": "application/json"}),
+            },
+        ],
+        "rate_limits": [
+            {"scope": RateLimitScope.GLOBAL, "max_requests": 500, "time_window_seconds": 3600},
+            {"scope": RateLimitScope.AGENT, "max_requests": 50, "time_window_seconds": 60},
+        ],
+    },
 ]
 
 
@@ -447,6 +776,27 @@ PERMISSIONS_DATA = [
     {"role": "customer-support", "tool": "ghana_tbill_calculator", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "fx_exchange_rate", "action": PermissionAction.EXECUTE},
     {"role": "customer-support", "tool": "loan_repayment_calculator", "action": PermissionAction.EXECUTE},
+    {"role": "platform-admin", "tool": "chango_auth_signup", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "chango_auth_verify_otp", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "chango_groups", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "chango_campaigns_group", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "chango_wallets", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "chango_contributions", "action": PermissionAction.MANAGE},
+    {"role": "platform-admin", "tool": "chango_cashout", "action": PermissionAction.MANAGE},
+    {"role": "fintech-analyst", "tool": "chango_auth_signup", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "chango_auth_verify_otp", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "chango_groups", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "chango_campaigns_group", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "chango_wallets", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "chango_contributions", "action": PermissionAction.EXECUTE},
+    {"role": "fintech-analyst", "tool": "chango_cashout", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_auth_signup", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_auth_verify_otp", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_groups", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_campaigns_group", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_wallets", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_contributions", "action": PermissionAction.EXECUTE},
+    {"role": "customer-support", "tool": "chango_cashout", "action": PermissionAction.EXECUTE},
 ]
 
 
